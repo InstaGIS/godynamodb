@@ -38,7 +38,7 @@ func (item Item) SAsUUID(key string) (uuid.UUID, error) {
 	}
 	id, err := uuid.Parse(value)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("value %s is not a valid UUID: %w", value, err)
 	}
 	return id, nil
 }
@@ -50,7 +50,7 @@ func (item Item) SAsURL(key string) (*url.URL, error) {
 	}
 	parsedURL, err := url.Parse(value)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("value %s is not a valid URL: %w", value, err)
 	}
 	return parsedURL, nil
 }
