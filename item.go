@@ -15,6 +15,7 @@ var (
 	ErrKeyNotFound = errors.New("key not found")
 	ErrSNotFound   = errors.New("S not found")
 	ErrNNotFound   = errors.New("N not found")
+	ErrLNotFound   = errors.New("L not found")
 )
 
 // TODO: add documentation
@@ -100,4 +101,22 @@ func (item Item) NAsInt64(key string) (int64, error) {
 		return 0, fmt.Errorf("value %s is not a valid int64: %w", value, err)
 	}
 	return n, nil
+}
+
+func (item Item) LAsStringSlice(key string) ([]string, error) {
+	value, ok := item[key]
+	if !ok {
+		return nil, ErrKeyNotFound
+	}
+	if len(value.L) == 0 {
+		return nil, ErrLNotFound
+	}
+	values := make([]string, len(value.L))
+	for i, v := range value.L {
+		if v.S == nil {
+			return nil, fmt.Errorf("invalid item at index %d: %w", i, ErrSNotFound)
+		}
+		values[i] = *v.S
+	}
+	return values, nil
 }

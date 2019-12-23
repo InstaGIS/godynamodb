@@ -1,6 +1,8 @@
 package godynamodb
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -209,5 +211,57 @@ func TestItem_NAsInt64(t *testing.T) {
 		age, err := item.NAsInt64("age")
 		assert.Equal(t, ErrNNotFound, err)
 		assert.Zero(t, age)
+	})
+}
+
+func TestItem_LAsStringSlice(t *testing.T) {
+	t.Parallel()
+	t.Run("OK", func(t *testing.T) {
+		t.Parallel()
+		item := Item(map[string]dynamodb.AttributeValue{
+			"msg": {
+				L: []dynamodb.AttributeValue{
+					{S: aws.String("hello")},
+					{S: aws.String("world")},
+					{S: aws.String(":)")},
+				},
+			},
+		})
+		msg, err := item.LAsStringSlice("msg")
+		require.Nil(t, err)
+		assert.Equal(t, []string{"hello", "world", ":)"}, msg)
+	})
+	t.Run("ErrKeyNotFound", func(t *testing.T) {
+		t.Parallel()
+		item := Item(map[string]dynamodb.AttributeValue{})
+		msg, err := item.LAsStringSlice("msg")
+		assert.Equal(t, ErrKeyNotFound, err)
+		assert.Zero(t, msg)
+	})
+	t.Run("ErrLNotFound", func(t *testing.T) {
+		t.Parallel()
+		item := Item(map[string]dynamodb.AttributeValue{
+			"msg": {SS: []string{"37"}},
+		})
+		msg, err := item.LAsStringSlice("msg")
+		assert.Equal(t, ErrLNotFound, err)
+		assert.Zero(t, msg)
+	})
+	t.Run("ItemErrSNotFound", func(t *testing.T) {
+		t.Parallel()
+		item := Item(map[string]dynamodb.AttributeValue{
+			"numbers": {
+				L: []dynamodb.AttributeValue{
+					{S: aws.String("zero")},
+					{N: aws.String("1")},
+					{S: aws.String("two")},
+				},
+			},
+		})
+		numbers, err := item.LAsStringSlice("numbers")
+		require.NotNil(t, err)
+		assert.True(t, strings.HasPrefix(err.Error(), "invalid item at index 1:"))
+		assert.True(t, errors.Is(err, ErrSNotFound))
+		assert.Zero(t, numbers)
 	})
 }
