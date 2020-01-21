@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
@@ -77,6 +79,7 @@ func (t *Test) GetClient() (*dynamodb.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
+	cfg.Region = endpoints.UsEast1RegionID
 	endpoint := fmt.Sprintf("http://localhost:%s", t.port)
 	cfg.EndpointResolver = aws.ResolveWithEndpointURL(endpoint)
 	cfg.HTTPClient = &http.Client{
