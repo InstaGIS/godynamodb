@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
+	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ory/dockertest"
 )
 
@@ -48,6 +49,9 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 	// wait for dynamodb to be ready
 	t.endpoint = resource.GetHostPort("8000/tcp")
 	log.Printf("endpoint: %s", t.endpoint)
+	// FIXME: debug info, remove later
+	spew.Dump(resource.Container.NetworkSettings)
+	log.Printf("DOCKER_HOST %s", os.Getenv("DOCKER_HOST"))
 	err = pool.Retry(t.waitForDynamoDB)
 	if err != nil {
 		log.Printf("could not connect to dynamodb: %s", err)
