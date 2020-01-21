@@ -53,7 +53,7 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 	case "":
 		t.endpoint = resource.GetHostPort("8000/tcp")
 	default:
-		t.endpoint = resource.Container.NetworkSettings.Networks["bridge"].IPAddress + ":" + resource.GetPort("8000/tcp")
+		t.endpoint = resource.Container.NetworkSettings.Networks["bridge"].IPAddress + ":8000"
 	}
 	log.Printf("endpoint: %s", t.endpoint)
 	err = pool.Retry(t.waitForDynamoDB)
