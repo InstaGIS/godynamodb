@@ -47,11 +47,15 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 	defer pool.Purge(resource)
 
 	// wait for dynamodb to be ready
-	t.endpoint = resource.GetHostPort("8000/tcp")
-	log.Printf("endpoint: %s", t.endpoint)
 	// FIXME: debug info, remove later
 	spew.Dump(resource.Container.NetworkSettings)
-	log.Printf("DOCKER_HOST %s", os.Getenv("DOCKER_HOST"))
+	switch os.Getenv("DOCKER_HOST") {
+	case "":
+		t.endpoint = resource.GetHostPort("8000/tcp")
+	default:
+		t.endpoint = resource.Container.NetworkSettings.Networks["bridge"].IPAddress + ":" + resource.GetPort("8000/tcp")
+	}
+	log.Printf("endpoint: %s", t.endpoint)
 	err = pool.Retry(t.waitForDynamoDB)
 	if err != nil {
 		log.Printf("could not connect to dynamodb: %s", err)
