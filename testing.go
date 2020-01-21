@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/ory/dockertest"
@@ -69,11 +68,15 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 
 // GetClient returns a DynamoDB Client configured.
 func (t *Test) GetClient() (*dynamodb.Client, error) {
-	cfg, err := external.LoadDefaultAWSConfig()
+	cfg, err := external.LoadDefaultAWSConfig(external.WithCredentialsValue{
+		AccessKeyID:     "KEY",
+		SecretAccessKey: "SECRET",
+		SessionToken:    "SESSION",
+		Source:          "fake credentials",
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
-	cfg.Region = endpoints.UsEast1RegionID
 	endpoint := fmt.Sprintf("http://localhost:%s", t.port)
 	cfg.EndpointResolver = aws.ResolveWithEndpointURL(endpoint)
 	cfg.HTTPClient = &http.Client{
