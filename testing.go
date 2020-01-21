@@ -22,7 +22,7 @@ type Test struct {
 	// Table is the name of the table to create.
 	Table string
 
-	port string
+	endpoint string
 }
 
 // TestMain runs the tests.
@@ -46,7 +46,8 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 	defer pool.Purge(resource)
 
 	// wait for dynamodb to be ready
-	t.port = resource.GetPort("8000/tcp")
+	t.endpoint = resource.GetHostPort("8000/tcp")
+	log.Printf("endpoint: %s", t.endpoint)
 	err = pool.Retry(t.waitForDynamoDB)
 	if err != nil {
 		log.Printf("could not connect to dynamodb: %s", err)
@@ -80,8 +81,7 @@ func (t *Test) GetClient() (*dynamodb.Client, error) {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
 	cfg.Region = endpoints.UsEast1RegionID
-	endpoint := fmt.Sprintf("http://localhost:%s", t.port)
-	cfg.EndpointResolver = aws.ResolveWithEndpointURL(endpoint)
+	cfg.EndpointResolver = aws.ResolveWithEndpointURL("http://" + t.endpoint)
 	cfg.HTTPClient = &http.Client{
 		Timeout: 3 * time.Second,
 	}
