@@ -7,20 +7,14 @@ jobs:
     docker:
       - image: circleci/golang:1.13.6
       - image: circleci/dynamodb
-#        port: 8000:8000
     steps:
       - checkout
       - restore_cache: # restores saved cache if no changes are detected since last run
           keys:
             - go-mod-v4-{{ checksum "go.sum" }}
-#      - run:
-#          name: install dockerize
-#          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-#          environment:
-#            DOCKERIZE_VERSION: v0.3.0
-#      - run:
-#          name: Wait for dynamodb
-#          command: dockerize -wait http://localhost:8000 -timeout 1m
+      - run:
+          name: Wait for dynamodb
+          command: dockerize -wait http://localhost:8000 -timeout 1m
       - run:
           name: Tests
           command: |
