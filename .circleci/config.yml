@@ -7,6 +7,7 @@ jobs:
     docker:
       - image: circleci/golang:1.13.6
       - image: circleci/dynamodb
+        port: 8000:8000
     steps:
       - checkout
       - restore_cache: # restores saved cache if no changes are detected since last run
