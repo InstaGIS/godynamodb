@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/ory/dockertest"
@@ -82,22 +83,26 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 
 // GetClient returns a DynamoDB Client configured.
 func (t *Test) GetClient() (*dynamodb.Client, error) {
-	cfg, err := external.LoadDefaultAWSConfig(external.WithCredentialsValue{
-		AccessKeyID:     "KEY",
-		SecretAccessKey: "SECRET",
-		SessionToken:    "SESSION",
-		Source:          "fake credentials",
+	cfg, err := external.LoadDefaultAWSConfig(external.WithCredentialsProvider{
+		CredentialsProvider: aws.StaticCredentialsProvider{
+			Value: aws.Credentials{
+				AccessKeyID:     "KEY",
+				SecretAccessKey: "SECRET",
+				SessionToken:    "SESSION",
+				Source:          "fake credentials",
+			},
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
-	cfg.Region = endpoints.UsEast1RegionID
+	cfg.Region = "us-east-1"
 	cfg.EndpointResolver = aws.ResolveWithEndpointURL("http://" + t.endpoint)
 	cfg.HTTPClient = &http.Client{
 		Timeout: 3 * time.Second,
 	}
-	cfg.Retryer = aws.NewDefaultRetryer(func(d *aws.DefaultRetryer) {
-		d.NumMaxRetries = 1
+	cfg.Retryer = retry.NewStandard(func(options *retry.StandardOptions) {
+		options.MaxAttempts = 1
 	})
 	return dynamodb.New(cfg), nil
 }
