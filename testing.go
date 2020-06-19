@@ -22,9 +22,6 @@ import (
 
 // Test is a DynamoDB integration test that runs using a local Docker container.
 type Test struct {
-	// Table is the name of the table to create.
-	Table string
-
 	inCircleCI bool
 	endpoint   string
 }

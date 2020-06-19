@@ -17,9 +17,10 @@ import (
 )
 
 // test instance
-var test = &godynamodb.Test{
-	Table: "test-table",
-}
+var (
+	test  = &godynamodb.Test{}
+	table = "test-table"
+)
 
 // TestMain launches package tests
 func TestMain(m *testing.M) {
@@ -51,7 +52,7 @@ func setupDB(svc *dynamodb.Client) error {
 			ReadCapacityUnits:  aws.Int64(1),
 			WriteCapacityUnits: aws.Int64(1),
 		},
-		TableName: aws.String(test.Table),
+		TableName: aws.String(table),
 	})
 	_, err := createRequest.Send(context.Background())
 	if err != nil {
@@ -64,7 +65,7 @@ func setupDB(svc *dynamodb.Client) error {
 			"id":   {S: aws.String("abc123")},
 			"name": {S: aws.String("John")},
 		},
-		TableName: aws.String(test.Table),
+		TableName: aws.String(table),
 	})
 	_, err = request.Send(context.Background())
 	if err != nil {
@@ -85,7 +86,7 @@ func TestTest_Sample(t *testing.T) {
 		Key: map[string]dynamodb.AttributeValue{
 			"id": {S: aws.String("abc123")},
 		},
-		TableName: aws.String(test.Table),
+		TableName: aws.String(table),
 	})
 	response, err := request.Send(context.Background())
 	require.Nil(t, err)
