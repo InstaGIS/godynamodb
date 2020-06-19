@@ -102,10 +102,10 @@ func (t *Test) GetClient() (*dynamodb.Client, error) {
 	cfg.Region = "us-east-1"
 	cfg.EndpointResolver = aws.ResolveWithEndpointURL("http://" + t.endpoint)
 	cfg.HTTPClient = &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: time.Second,
 	}
 	cfg.Retryer = retry.NewStandard(func(options *retry.StandardOptions) {
-		options.MaxAttempts = 1
+		options.MaxAttempts = 3
 	})
 	return dynamodb.New(cfg), nil
 }
