@@ -16,6 +16,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbiface"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -26,9 +28,14 @@ type Test struct {
 	endpoint   string
 }
 
-// TestMain runs the tests.
+// TestMain runs the tests. First, creates a container using the image amazon/dynamodb-local, with "host" as network
+// and listening to a random port. Then, calls setupDB to initialize the database and finally calls m.Run() to execute
+// the tests of the pkg.
+// As special case, if the environment variable CIRCLECI exists, the container isn't created and is assumed to be running
+// and listening at http://localhost:8000. Check .circleci/config.yml to see an example of how to run the integration tests
+// in CircleCI.
 //
-// Using this function we can ensure the underlying resources are freed (check https://github.com/golang/go/issues/23404)
+// Note: Using this function we can ensure the underlying resources are freed (check https://github.com/golang/go/issues/23404)
 func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) int {
 	t.inCircleCI = os.Getenv("CIRCLECI") == "true"
 	switch t.inCircleCI {
@@ -80,7 +87,7 @@ func (t *Test) TestMain(m *testing.M, setupDB func(svc *dynamodb.Client) error) 
 	return m.Run()
 }
 
-// GetClient returns a DynamoDB Client configured.
+// GetClient returns a DynamoDB Client configured to access the running dynamodb-local container.
 func (t *Test) GetClient() (*dynamodb.Client, error) {
 	cfg, err := external.LoadDefaultAWSConfig(external.WithCredentialsProvider{
 		CredentialsProvider: aws.StaticCredentialsProvider{
@@ -126,4 +133,21 @@ func getFreePort() (int, error) {
 		return 0, fmt.Errorf("invalid port %s: %s", port, err)
 	}
 	return n, nil
+}
+
+// GetItem returns an item from a table, or nil if it isn't found.
+func GetItem(t *testing.T, svc dynamodbiface.ClientAPI, table string, key map[string]string) map[string]dynamodb.AttributeValue {
+	itemKey := make(map[string]dynamodb.AttributeValue, len(key))
+	for k, v := range key {
+		itemKey[k] = dynamodb.AttributeValue{S: aws.String(v)}
+	}
+	request := svc.GetItemRequest(&dynamodb.GetItemInput{
+		Key:                    itemKey,
+		ReturnConsumedCapacity: dynamodb.ReturnConsumedCapacityNone,
+		TableName:              aws.String(table),
+	})
+	ctx := context.Background()
+	response, err := request.Send(ctx)
+	require.Nil(t, err)
+	return response.Item
 }
