@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -108,27 +107,6 @@ func (t *Test) GetClient() (*dynamodb.Client, error) {
 		options.MaxAttempts = 3
 	})
 	return dynamodb.New(cfg), nil
-}
-
-func (t *Test) waitForDynamoDB() error {
-	svc, err := t.GetClient()
-	if err != nil {
-		return err
-	}
-	request := svc.DescribeTableRequest(&dynamodb.DescribeTableInput{
-		TableName: aws.String(t.Table),
-	})
-	_, err = request.Send(context.Background())
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			// ignore only an ResourceNotFoundException error
-			if awsErr.Code() == dynamodb.ErrCodeResourceNotFoundException {
-				return nil
-			}
-		}
-		return err
-	}
-	return nil
 }
 
 func getFreePort() (int, error) {
